@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>门条</title>
+    <style>
+        /* 全局样式重置 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #333; /* 背景深色，突出中间内容 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            overflow: hidden; /* 禁止任何滚动 */
+        }
+
+        /* 手机模拟容器 */
+        #app-container {
+            position: relative; /* 作为绝对定位的基准 */
+            width: 100%;
+            height: 100%;
+            max-width: 480px; /* 限制最大宽度 */
+            background: #fff;
+            overflow: hidden;
+        }
+
+        /* --- 【核心修改】全局悬浮输入框 --- */
+        /* 它不属于任何一页，它独立悬浮在所有内容之上 */
+        #fixed-header {
+            position: absolute;
+            display: none; /* 默认隐藏，由 JS 控制显示 */
+            
+            /* === 位置调整区 === */
+            /* 这里使用 % 是相对于屏幕宽度的，非常稳定 */
+            top: 6.2%;  /* 上下位置：觉得高了改大，觉得低了改小 */
+            left: 7.4%;  /* 左右位置 */
+            width: 80%; /* 宽度 */
+            height: 40px; /* 固定高度 */
+            
+            /* === 字体样式 === */
+            background: transparent;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-size: 16px;
+            font-weight: normal;
+            color: #000;
+            z-index: 9999; /* 保证永远在最上面 */
+            
+            /* 调试用：如果找不到位置，把下面这行注释去掉，就能看到红色框 */
+            /*border: 2px solid red; background: rgba(255,0,0,0.2); */
+        }
+
+        /* 图片通用样式 */
+        .bg-image {
+            width: 100%;
+            display: block;
+            pointer-events: none;
+        }
+
+        /* 页面切换逻辑 */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* 默认隐藏 */
+            background: #fff;
+        }
+        .page.active {
+            display: block; /* 激活显示 */
+        }
+
+        /* --- 第一页：录入界面样式 --- */
+        #page-start {
+            display: none; /* 由 active 控制 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+        }
+        #page-start.active {
+            display: flex;
+        }
+        
+        #initial-name {
+            width: 70%;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            text-align: center;
+        }
+        #btn-begin {
+            width: 76%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* --- 表格输入框样式 (仅第二页使用) --- */
+        .input-group {
+            position: absolute;
+            left: 51%;
+            width: 45%;
+            height: 2.5%;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #000;
+            outline: none;
+            padding-left: 5px;
+            /*调试用：border: 1px solid blue; */
+        }
+        
+        /* 表格格子位置微调 */
+        #input-name { top: 47.7%; }
+        #input-info { top: 51.7%; }
+        #input-teacher { top: 55.7%; }
+        #input-date { top: 59.7%; }
+
+        /* --- 按钮热区 --- */
+        .btn-hotspot {
+            position: absolute;
+            cursor: pointer;
+            background: transparent;
+            z-index: 100;
+            -webkit-tap-highlight-color: transparent;
+            /* background: rgba(0,255,0,0.3); */
+        }
+
+        /* 允许出门按钮 */
+        #btn-submit {
+            bottom: 11.8%; /* 靠底定位比较稳 */
+            left: 3.5%;
+            width: 93%;
+            height: 4.8%;
+        }
+
+        /* 关闭按钮 */
+        #btn-close {
+            top: 65.5%; /* 如果关闭按钮位置不对，调这里 */
+            left: 43.5%;
+            width: 13%;
+            height: 5%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <input type="text" id="fixed-header" readonly>
+
+        <div id="page-start" class="page active">
+            <h2 style="color:#333; margin-bottom:30px;">信息录入</h2>
+            <input type="text" id="initial-name" placeholder="请输入姓名">
+            <button id="btn-begin">生成门条</button>
+        </div>
+
+        <div id="page-form" class="page">
+            <img src="form.png" class="bg-image">
+            
+            <input type="text" id="input-name" class="input-group" value="[JQ210512]">
+            <input type="text" id="input-info" class="input-group" value="男，11年级">
+            <input type="text" id="input-teacher" class="input-group" value="王静">
+            <input type="text" id="input-date" class="input-group" value="2025-">
+
+            <div id="btn-submit" class="btn-hotspot"></div>
+        </div>
+
+        <div id="page-result" class="page">
+            <img src="result.png" class="bg-image">
+            <div id="btn-close" class="btn-hotspot"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // 获取元素
+        const fixedHeader = document.getElementById('fixed-header');
+        const pageStart = document.getElementById('page-start');
+        const pageForm = document.getElementById('page-form');
+        const pageResult = document.getElementById('page-result');
+        
+        const btnBegin = document.getElementById('btn-begin');
+        const btnSubmit = document.getElementById('btn-submit');
+        const btnClose = document.getElementById('btn-close');
+        const initialName = document.getElementById('initial-name');
+
+        // 1. 点击“生成门条”
+        btnBegin.addEventListener('click', function() {
+            const name = initialName.value.trim();
+            if(!name) { alert("请输入姓名"); return; }
+
+            // 设置悬浮框内容
+            fixedHeader.value = name + "门条";
+            
+            // 显示悬浮框 (它会一直停留在屏幕固定位置)
+            fixedHeader.style.display = 'block';
+
+            // 切换到第二页
+            pageStart.classList.remove('active');
+            pageForm.classList.add('active');
+        });
+
+        // 2. 点击“允许出门”
+        btnSubmit.addEventListener('click', function() {
+            // 切换到第三页
+            // 注意：fixedHeader 保持显示，位置根本没有变，所以视觉上绝对静止
+            pageForm.classList.remove('active');
+            pageResult.classList.add('active');
+            window.scrollTo(0,0);
+        });
+
+        // 3. 点击“关闭”
+        btnClose.addEventListener('click', function() {
+            // 隐藏悬浮框
+            fixedHeader.style.display = 'none';
+            initialName.value = ""; // 清空
+
+            // 回到第一页
+            pageResult.classList.remove('active');
+            pageStart.classList.add('active');
+        });
+
+        // 阻止 iOS 橡皮筋拖动效果
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+    </script>
+</body>
+</html>
